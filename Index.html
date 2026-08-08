@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+ <html lang="en">
+<head>
+<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Chronolog — Sleep Rhythm &amp; Sleep Pattern Analyzer</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+ <style>
+   :root{
+	     --bg-void:#1b1f3a;
+--bg-panel:#1e223e;
+--bg-panel-alt:#1D2247;
+	       --bg-raised:#232a56;
+--accent-dusk:#6C7FE8;
+    --accent-dusk-soft:rgba(108,127,232,0.18);
+--accent-dawn:#E8A34C;
+--accent-dawn-soft:rgba(232,163,76,0.18);
+  --accent-alert:#E86B6B;
+   --accent-alert-soft:rgba(232,107,107,0.15);
+	    --text-primary:#F1F2FA;
+      --text-muted:#9098C4;
+        --text-faint:#6870A0;
+ --line:rgba(255,255,255,0.09);
+--serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif;
+     --mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Courier New', monospace;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+	       *{box-sizing:border-box;}
+  body{
+    margin:0;
+background: radial-gradient(ellipse at top, #1a1f42 0%, var(--bg-void) 55%);
+ color: var(--text-primary);
+  font-family: var(--sans);
+   padding: 2.5rem 1.25rem 4rem;
+    }
+      .wrap{max-width: 960px; margin: 0 auto;}
+
+        header.hero{margin-bottom: 2.5rem;}
+ .eyebrow{
+   font-family: var(--mono);
+     font-size: 12px;
+  letter-spacing: 0.14em;
+text-transform: uppercase;
+color: var(--accent-dawn);
+display:flex; align-items:center; gap:10px;
+	    }
+.eyebrow::before{content:"";display:inline-block;width:16px;height:1px;background:var(--accent-dawn);}
+ h1{
+font-family: var(--serif);
+   font-weight: 400;
+    font-size: 42px;
+      margin: 0.5rem 0 0.6rem;
+letter-spacing: 0.2px;
+}
+   .lede{color: var(--text-muted); font-size:15.5px; line-height:1.65; max-width: 620px; margin:0;}
+
+     .divider{height:1px; background:var(--line); margin: 2.25rem 0;}
+
+  section .section-label{
+font-family: var(--mono);
+       font-size: 11px;
+letter-spacing: 0.12em;
+    text-transform: uppercase;
+color: var(--text-faint);
+ margin-bottom: 0.9rem;
+  }
+   h2{font-family: var(--serif); font-weight:400; font-size:22px; margin: 0 0 1rem;}
+
+    .panel{
+      background: var(--bg-panel);
+border: 1px solid var(--line);
+ border-radius: 10px;
+   padding: 1.5rem 1.6rem;
+}
+
+.form-grid{
+display:grid;
+       grid-template-columns: repeat(auto-fit, minmax(140px,1fr));
+  gap: 1rem 1.1rem;
+    align-items:end;
+}
+ .field label{
+  display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;
+font-family: var(--mono); letter-spacing:0.03em;
+}
+      input[type=date], input[type=time], input[type=number]{
+width:100%;
+ background: var(--bg-panel-alt);
+   border:1px solid var(--line);
+     color: var(--text-primary);
+padding: 9px 10px;
+border-radius:6px;
+       font-family: var(--mono);
+  font-size: 14px;
+	    }
+input[type=date]:focus, input[type=time]:focus, input[type=number]:focus{
+ outline:none; border-color:var(--accent-dusk);
+  }
+   input[type=range]{width:100%; accent-color: var(--accent-dawn);}
+	    .energy-row{display:flex; align-items:center; gap:10px;}
+      .energy-val{font-family:var(--mono); font-size:15px; min-width:14px; text-align:center;}
+        .add-btn{
+ grid-column: 1 / -1;
+   justify-self:start;
+     margin-top: 0.4rem;
+  background: var(--accent-dusk);
+color: #0F1226;
+       border:none;
+  font-weight:600;
+padding: 10px 20px;
+border-radius:6px;
+ cursor:pointer;
+  font-size:14px;
+   font-family: var(--sans);
+    }
+      .add-btn:hover{background:#7c8cf0;}
+.form-msg{grid-column:1/-1; font-size:13px; color: var(--accent-alert); min-height:16px; margin-top:-4px;}
+
+ table.log{width:100%; border-collapse:collapse; font-size:13.5px;}
+table.log th{
+     text-align:left; font-family:var(--mono); font-weight:400; font-size:11px;
+  color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em;
+padding: 6px 8px; border-bottom:1px solid var(--line);
+       }
+  table.log td{padding:8px; border-bottom:1px solid var(--line); font-family:var(--mono); color:var(--text-primary);}
+table.log tr:last-child td{border-bottom:none;}
+.weekend-tag{color:var(--accent-dawn); font-size:11px; margin-left:6px;}
+ .del-btn{
+  background:none; border:1px solid var(--line); color:var(--text-muted);
+   border-radius:5px; padding:3px 9px; cursor:pointer; font-family:var(--sans); font-size:12px;
+	    }
+      .del-btn:hover{border-color:var(--accent-alert); color:var(--accent-alert);}
+
+	        .stat-grid{
+ display:grid; grid-template-columns: repeat(auto-fit, minmax(190px,1fr)); gap:1rem;
+   }
+     .stat-card{
+  background:var(--bg-panel-alt); border-radius:8px; padding:1.1rem 1.2rem;
+border:1px solid var(--line);
+       }
+  .stat-label{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-faint); margin-bottom:8px;}
+	    .stat-val{font-family:var(--serif); font-size:28px; color:var(--text-primary);}
+.stat-sub{font-size:12.5px; color:var(--text-muted); margin-top:6px; line-height:1.5;}
+ .flag-jetlag .stat-val{color:var(--accent-alert);}
+  .flag-ok .stat-val{color:var(--accent-dusk);}
+
+   .chart-box{position:relative; height:280px; margin-top: 0.5rem;}
+	    .chart-note{font-size:12.5px; color:var(--text-muted); margin-top:0.6rem; line-height:1.6;}
+
+      .clock-wrap{display:flex; gap: 2rem; align-items:center; flex-wrap:wrap;}
+        .clock-svg{flex-shrink:0;}
+.clock-legend{font-size:13px; color:var(--text-muted); line-height:1.9; font-family:var(--sans);}
+   .legend-dot{display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:8px; vertical-align:middle;}
+
+     .science p{font-size:14.5px; line-height:1.75; color:var(--text-muted); margin: 0 0 1rem;}
+.science strong{color:var(--text-primary); font-weight:600;}
+.science .refs{font-size:12px; color:var(--text-faint); margin-top:1rem; font-family:var(--mono); line-height:1.8;}
+
+       .report{
+background: linear-gradient(180deg, var(--bg-panel-alt), var(--bg-panel));
+    border:1px solid var(--accent-dusk-soft);
+border-radius:10px;
+ padding: 1.75rem 2rem;
+  }
+   .report h3{font-family:var(--serif); font-weight:400; font-size:19px; margin:0 0 1rem; color: var(--accent-dawn);}
+	    .report p{font-size:14.5px; line-height:1.8; color:var(--text-primary); margin:0 0 1rem;}
+.report p:last-child{margin-bottom:0;}
+        .report .stamp{font-family:var(--mono); font-size:11px; color:var(--text-faint); margin-top:1.25rem; border-top:1px solid var(--line); padding-top:0.9rem;}
+
+ .data-controls{display:flex; align-items:center; gap:0.8rem; flex-wrap:wrap;}
+.data-btn{
+background: var(--bg-panel-alt);
+  border:1px solid var(--line);
+color: var(--text-primary);
+padding: 9px 15px;
+  border-radius:6px;
+    cursor:pointer;
+font-size:13px;
+font-family: var(--sans);
+  font-weight:600;
+display:inline-block;
+	    transition: border-color 0.15s, background 0.15s;
+      }
+        .data-btn:hover{border-color:var(--accent-dusk); background:var(--bg-raised);}
+ #download-btn{background:var(--accent-dusk); color:#0F1226; border-color:var(--accent-dusk);}
+   #download-btn:hover{background:#7c8cf0;}
+     .data-status{font-family:var(--mono); font-size:11.5px; color:var(--accent-alert);}
+.data-status.saved{color:var(--text-faint);}
+
+.modal-overlay{
+       position:fixed; inset:0; background:rgba(6,8,20,0.72);
+  display:flex; align-items:center; justify-content:center;
+    z-index:1000; padding:1.25rem;
+}
+ .modal-box{
+  background: var(--bg-panel);
+   border:1px solid var(--line);
+    border-radius:10px;
+      padding: 1.75rem;
+        max-width: 400px;
+width:100%;
+}
+     .modal-box h3{font-family:var(--serif); font-weight:400; font-size:19px; margin:0 0 0.7rem; color:var(--accent-dawn);}
+  .modal-box p{font-size:14px; color:var(--text-muted); line-height:1.6; margin:0 0 1.4rem;}
+.modal-actions{display:flex; gap:0.7rem; justify-content:flex-end;}
+.modal-btn{
+  padding:9px 18px; border-radius:6px; cursor:pointer; font-size:13.5px;
+    font-family:var(--sans); font-weight:600; border:1px solid var(--line);
+}
+ .modal-btn.no{background:var(--accent-dusk); color:#0F1226; border-color:var(--accent-dusk);}
+  .modal-btn.no:hover{background:#7c8cf0;}
+   .modal-btn.yes{background:transparent; color:var(--text-muted);}
+    .modal-btn.yes:hover{color:var(--text-primary); border-color:var(--text-muted);}
+
+      footer{margin-top:3rem; text-align:center; font-size:12px; color:var(--text-faint); font-family:var(--mono);}
+        @media (max-width:600px){
+ h1{font-size:32px;}
+.clock-wrap{flex-direction:column;}
+     }
+</style>
+</head>
+	       <body>
+  <div class="wrap">
+
+    <header class="hero">
+<div class="eyebrow">field notes · sleep-wake timing</div>
+ <h1>Chronolog</h1>
+  <p class="lede">A daily log for studying your own circadian consistency — bedtime, wake time, evening screen exposure, and next-day energy, turned into a small research report on your sleep-wake rhythm.</p>
+   </header>
+
+    <div class="divider"></div>
+
+      <section id="log-section">
+        <div class="section-label">01 — daily entry</div>
+ <h2>Log a night</h2>
+<div class="panel">
+<div class="form-grid">
+  <div class="field">
+<label for="in-date">Date</label>
+       <input type="date" id="in-date">
+  </div>
+	    <div class="field">
+<label for="in-bed">Bedtime</label>
+ <input type="time" id="in-bed" value="23:00">
+  </div>
+<div class="field">
+    <label for="in-wake">Wake time</label>
+	      <input type="time" id="in-wake" value="07:00">
+</div>
+ <div class="field">
+   <label for="in-screen">Screen time before bed (min)</label>
+<input type="number" id="in-screen" min="0" max="300" value="45">
+  </div>
+<div class="field">
+<label for="in-energy">Next-day energy (1–5)</label>
+  <div class="energy-row">
+    <input type="range" id="in-energy" min="1" max="5" step="1" value="4">
+<span class="energy-val" id="energy-out">4</span>
+ </div>
+  </div>
+   <button class="add-btn" id="add-btn">Add entry</button>
+<div class="form-msg" id="form-msg"></div>
+      </div>
+</div>
+
+ <div style="height:1.5rem;"></div>
+
+   <div class="panel" id="data-panel" style="margin-bottom:1.5rem;">
+<div class="section-label" style="margin-bottom:0.7rem;">local data — this browser only</div>
+  <p style="font-size:13px; color:var(--text-muted); line-height:1.6; margin:0 0 1rem;">Chronolog has no server memory — everything lives in this tab. Download a backup file to keep your log, and upload it later (here or on another device) to pick up where you left off.</p>
+<div class="data-controls">
+	       <button class="data-btn" id="download-btn" type="button">⬇ Download data (.json)</button>
+  <label class="data-btn" id="upload-btn" for="upload-input">⬆ Upload data (.json)</label>
+    <input type="file" id="upload-input" accept="application/json,.json" style="display:none;">
+<span class="data-status" id="data-status">no unsaved backup needed — nothing logged yet</span>
+ </div>
+</div>
+
+<div class="panel" id="log-panel">
+    <div style="overflow-x:auto;">
+      <table class="log" id="log-table">
+        <thead>
+ <tr><th>Date</th><th>Bedtime</th><th>Wake</th><th>Duration</th><th>Screen</th><th>Energy</th><th></th></tr>
+</thead>
+     <tbody id="log-tbody"></tbody>
+  </table>
+</div>
+       </div>
+  </section>
+
+	    <div class="divider"></div>
+
+<section id="stats-section">
+<div class="section-label">02 — derived measures</div>
+  <h2>This week, at a glance</h2>
+   <div class="stat-grid" id="stat-grid"></div>
+	    </section>
+
+	      <div class="divider"></div>
+
+	        <section id="chart-section">
+ <div class="section-label">03 — sleep duration</div>
+<h2>Total sleep over time</h2>
+     <div class="panel">
+  <div class="chart-box"><canvas id="durationChart" role="img" aria-label="Line chart of nightly sleep duration and 7-day rolling average"></canvas></div>
+<div class="chart-note">Solid line: nightly total sleep. Dashed line: 7-day rolling average — the steadier reference your body actually entrains to.</div>
+       </div>
+</section>
+
+    <div style="height:2rem;"></div>
+
+<section>
+ <div class="section-label">04 — timing consistency</div>
+  <h2>The sleep clock</h2>
+   <div class="panel">
+<div class="clock-wrap">
+	      <div class="clock-svg" id="clock-container"></div>
+        <div class="clock-legend">
+ <div><span class="legend-dot" style="background:var(--accent-dusk)"></span>sleep span (bedtime → wake)</div>
+<div><span class="legend-dot" style="background:var(--accent-dawn)"></span>most recent night, outer ring</div>
+     <div style="margin-top:10px; max-width:220px; color:var(--text-faint); font-size:12.5px;">Each ring is one logged night, oldest at the center. A tight, aligned stack of arcs means a stable sleep-wake phase; a scattered stack means a drifting one.</div>
+  </div>
+</div>
+	       </div>
+  </section>
+
+    <div style="height:2rem;"></div>
+
+<section>
+ <div class="section-label">05 — evening habits vs. next-day state</div>
+  <h2>Screen time and next-day energy</h2>
+   <div class="panel">
+	    <div class="chart-box"><canvas id="screenChart" role="img" aria-label="Scatter chart of screen time before bed against next-day energy rating"></canvas></div>
+	      <div class="chart-note" id="corr-note"></div>
+        </div>
+ </section>
+
+   <div class="divider"></div>
+
+     <section class="science">
+  <div class="section-label">06 — background</div>
+<h2>Why timing, not just duration</h2>
+<div class="panel">
+  <p>Sleep is paced by the <strong>suprachiasmatic nucleus (SCN)</strong>, a small hypothalamic clock that runs on a roughly 24-hour cycle and is reset daily mainly by light hitting the retina. The SCN governs the nightly rise of <strong>melatonin</strong>, which normally begins a couple of hours before habitual bedtime and signals the body that night has arrived. Keeping bedtime and wake time at similar clock positions night after night keeps this melatonin rhythm anchored; shifting them around forces the clock to keep re-adjusting, which is part of why irregular schedules feel worse than short-but-consistent ones.</p>
+    <p><strong>Social jetlag</strong> is the mismatch between the sleep schedule your body clock wants and the one imposed by work, school, or weekend social life — commonly estimated as the gap between the midpoint of sleep on free days and on workdays. Larger gaps are associated with poorer mood, alertness, and metabolic markers, in much the same way that crossing time zones produces jetlag, except the "time zones" here are self-imposed by a Friday-night-late, Monday-morning-early routine.</p>
+<p>Evening light — including screens — is the other lever: light in the blue-enriched range suppresses melatonin release most effectively, so exposure close to bedtime can push the clock later and delay sleep onset, independent of how sleepy a person otherwise feels. That is the mechanism this log's screen-time comparison is probing.</p>
+ <div class="refs">refs (general): Roenneberg, Allebrandt, Merrow &amp; Vetter, "Social Jetlag and Obesity," Current Biology (2012) · Czeisler et al. on melatonin and light suppression, various · Duffy &amp; Czeisler on circadian phase and health, Sleep Medicine Clinics</div>
+  </div>
+</section>
+
+    <div class="divider"></div>
+
+      <section>
+        <div class="section-label">07 — findings</div>
+ <h2>Summary report</h2>
+   <div class="report" id="report"></div>
+	     </section>
+
+  <footer>
+chronolog — session-only data, not a diagnostic tool<br>
+       <button class="data-btn" id="close-btn" type="button" style="margin-top:0.9rem; font-size:12px; padding:7px 14px;">Close Chronolog</button>
+  </footer>
+    </div>
+
+<div class="modal-overlay" id="exit-modal" style="display:none;">
+<div class="modal-box">
+  <h3>Did you download your data?</h3>
+   <p>Chronolog doesn't save anything on its own. If you leave without downloading a backup, tonight's entries — and everything else in this log — will be gone for good.</p>
+    <div class="modal-actions">
+      <button class="modal-btn no" id="modal-no">No, download it now</button>
+<button class="modal-btn yes" id="modal-yes">Yes, just close</button>
+ </div>
+   </div>
+     </div>
+
+  <script>
+(function(){
+
+	       let entries = [];
+let dataSaved = true; // becomes false whenever entries change, true right after a successful download
+
+    function markDirty(){
+dataSaved = (entries.length === 0);
+ updateDataStatus();
+}
+
+   function updateDataStatus(){
+    const status = document.getElementById('data-status');
+      if (!status) return;
+        if (entries.length === 0){
+ status.textContent = 'no unsaved backup needed — nothing logged yet';
+   status.classList.add('saved');
+     } else if (dataSaved){
+status.textContent = 'backup downloaded — up to date';
+status.classList.add('saved');
+} else {
+  status.textContent = 'unsaved changes — download a backup before closing';
+    status.classList.remove('saved');
+}
+ }
+
+  function downloadData(){
+   const payload = {
+    app: 'chronolog',
+      exportedAt: new Date().toISOString(),
+entries: entries
+ };
+   const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+     const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+const stamp = new Date().toISOString().slice(0,10);
+       a.href = url;
+  a.download = 'chronolog-export-' + stamp + '.json';
+    document.body.appendChild(a);
+a.click();
+ document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+   dataSaved = true;
+    updateDataStatus();
+      }
+
+        function importData(file){
+ const msg = document.getElementById('form-msg');
+   const reader = new FileReader();
+     reader.onload = function(e){
+let parsed;
+try {
+       parsed = JSON.parse(e.target.result);
+  } catch (err){
+    alert('That file is not valid JSON — could not read it.');
+return;
+ }
+  const incoming = Array.isArray(parsed) ? parsed : parsed.entries;
+   if (!Array.isArray(incoming)){
+	    alert('That file does not look like a Chronolog export.');
+return;
+        }
+ let imported = [];
+   try {
+     imported = incoming.map(function(r){
+  return makeEntry(r.date, r.bedtime, r.wakeTime, r.screenTime || 0, r.energyLevel);
+}).filter(function(e){ return e.date && e.bedtime && e.wakeTime; });
+       } catch (err){
+  alert('Some entries in that file were malformed and could not be read.');
+    return;
+}
+ if (imported.length === 0){
+  alert('No usable entries were found in that file.');
+   return;
+    }
+      const replace = confirm(
+        imported.length + ' night(s) found in that file.\n\n' +
+ 'Click OK to MERGE these into your current log (replacing any matching dates).\n' +
+'Click Cancel to REPLACE your current log entirely with this file.'
+);
+  if (replace){
+imported.forEach(function(newE){
+       const idx = entries.findIndex(function(e){ return e.date === newE.date; });
+  if (idx >= 0) entries[idx] = newE; else entries.push(newE);
+	    });
+} else {
+ entries = imported;
+}
+   dataSaved = false;
+    renderAll();
+updateDataStatus();
+        if (msg) msg.textContent = '';
+ };
+   reader.onerror = function(){
+     alert('Could not read that file.');
+  };
+reader.readAsText(file);
+}
+
+
+function timeToMinutes(t){
+ const parts = t.split(':');
+  return parseInt(parts[0],10)*60 + parseInt(parts[1],10);
+}
+
+function computeDuration(bed, wake){
+      let b = timeToMinutes(bed);
+        let w = timeToMinutes(wake);
+ if (w <= b) w += 24*60;
+   return (w - b) / 60;
+}
+
+  function makeEntry(date, bedtime, wakeTime, screenTime, energyLevel){
+return {
+date: date,
+  bedtime: bedtime,
+    wakeTime: wakeTime,
+sleepDuration: computeDuration(bedtime, wakeTime),
+screenTime: Number(screenTime),
+  energyLevel: Number(energyLevel)
+   };
+	    }
+
+      function isWeekend(dateStr){
+        const d = new Date(dateStr + "T12:00:00");
+ const day = d.getDay();
+return day === 0 || day === 6;
+     }
+
+  function sortedEntries(){
+return entries.slice().sort(function(a,b){ return a.date.localeCompare(b.date); });
+       }
+
+  function circularStats(minutesArray){
+    const n = minutesArray.length;
+let sumSin = 0, sumCos = 0;
+ minutesArray.forEach(function(m){
+  const angle = (m / 1440) * 2 * Math.PI;
+   sumSin += Math.sin(angle);
+    sumCos += Math.cos(angle);
+      });
+        const meanSin = sumSin/n, meanCos = sumCos/n;
+ const R = Math.sqrt(meanSin*meanSin + meanCos*meanCos);
+   let meanAngle = Math.atan2(meanSin, meanCos);
+     let meanMinutes = (meanAngle/(2*Math.PI))*1440;
+if (meanMinutes < 0) meanMinutes += 1440;
+const clamped = Math.min(Math.max(R, 1e-9), 1);
+       const sdMinutes = Math.sqrt(Math.max(0, -2*Math.log(clamped))) * (1440/(2*Math.PI));
+  return { meanMinutes: meanMinutes, sdMinutes: sdMinutes };
+    }
+
+function fmtMinutesAsTime(mins){
+ let m = ((Math.round(mins) % 1440) + 1440) % 1440;
+const h = Math.floor(m/60), mm = m%60;
+   return String(h).padStart(2,'0') + ':' + String(mm).padStart(2,'0');
+	    }
+
+      function pearson(xs, ys){
+	        const n = xs.length;
+ if (n < 2) return null;
+   const mx = xs.reduce((a,b)=>a+b,0)/n;
+	     const my = ys.reduce((a,b)=>a+b,0)/n;
+  let num=0, dx2=0, dy2=0;
+for (let i=0;i<n;i++){
+       const dx = xs[i]-mx, dy = ys[i]-my;
+  num += dx*dy; dx2 += dx*dx; dy2 += dy*dy;
+    }
+if (dx2===0 || dy2===0) return null;
+ return num / Math.sqrt(dx2*dy2);
+  }
+
+   function renderTable(){
+    const tbody = document.getElementById('log-tbody');
+      tbody.innerHTML = '';
+const sorted = sortedEntries();
+ if (sorted.length === 0){
+   tbody.innerHTML = '<tr><td colspan="7" style="color:var(--text-faint); font-family:var(--sans);">No entries yet — log your first night above.</td></tr>';
+     return;
+  }
+sorted.forEach(function(e){
+       const tr = document.createElement('tr');
+  const wknd = isWeekend(e.date) ? '<span class="weekend-tag">wknd</span>' : '';
+    tr.innerHTML =
+'<td>' + e.date + wknd + '</td>' +
+ '<td>' + e.bedtime + '</td>' +
+'<td>' + e.wakeTime + '</td>' +
+   '<td>' + e.sleepDuration.toFixed(1) + 'h</td>' +
+'<td>' + e.screenTime + 'm</td>' +
+	      '<td>' + e.energyLevel + '/5</td>' +
+        '<td><button class="del-btn" data-date="' + e.date + '">remove</button></td>';
+ tbody.appendChild(tr);
+});
+     tbody.querySelectorAll('.del-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+const d = btn.getAttribute('data-date');
+       entries = entries.filter(function(e){ return e.date !== d; });
+  markDirty();
+	    renderAll();
+});
+ });
+  }
+
+   function computeAll(){
+    const sorted = sortedEntries();
+      const n = sorted.length;
+        const result = {
+ n: n,
+   avgDuration: null,
+	     rollingAvg: null,
+  consistencyScore: null,
+consistencyLabel: '',
+	       socialJetlag: null,
+  jetlagAvailable: false
+    };
+if (n === 0) return result;
+
+ const durations = sorted.map(function(e){ return e.sleepDuration; });
+  result.avgDuration = durations.reduce((a,b)=>a+b,0)/n;
+
+   const last7 = sorted.slice(Math.max(0, n-7));
+    result.rollingAvg = last7.map(e=>e.sleepDuration).reduce((a,b)=>a+b,0) / last7.length;
+
+      const bedMinutes = sorted.map(function(e){ return timeToMinutes(e.bedtime); });
+        const wakeMinutes = sorted.map(function(e){ return timeToMinutes(e.wakeTime); });
+ const bedStats = circularStats(bedMinutes);
+   const wakeStats = circularStats(wakeMinutes);
+     result.consistencyScore = (bedStats.sdMinutes + wakeStats.sdMinutes) / 2;
+  if (result.consistencyScore < 20) result.consistencyLabel = 'excellent';
+else if (result.consistencyScore < 40) result.consistencyLabel = 'good';
+       else if (result.consistencyScore < 60) result.consistencyLabel = 'fair';
+  else result.consistencyLabel = 'poor';
+
+    const weekday = [], weekend = [];
+sorted.forEach(function(e){
+ const bedRaw = timeToMinutes(e.bedtime);
+  const midsleepRaw = bedRaw + (e.sleepDuration*60)/2;
+   const midsleepMod = ((midsleepRaw % 1440) + 1440) % 1440;
+if (isWeekend(e.date)) weekend.push(midsleepMod);
+      else weekday.push(midsleepMod);
+        });
+ if (weekday.length > 0 && weekend.length > 0){
+   const wd = circularStats(weekday).meanMinutes;
+     const we = circularStats(weekend).meanMinutes;
+let diff = we - wd;
+diff = ((diff + 720) % 1440 + 1440) % 1440 - 720;
+       result.socialJetlag = Math.abs(diff)/60;
+  result.jetlagAvailable = true;
+    }
+return result;
+ }
+
+  function renderStats(stats){
+   const grid = document.getElementById('stat-grid');
+	    grid.innerHTML = '';
+      function card(label, val, sub, cls){
+const div = document.createElement('div');
+div.className = 'stat-card' + (cls ? ' ' + cls : '');
+   div.innerHTML = '<div class="stat-label">' + label + '</div><div class="stat-val">' + val + '</div><div class="stat-sub">' + sub + '</div>';
+     return div;
+  }
+if (stats.n === 0){
+grid.appendChild(card('nights logged', '0', 'log a few nights to see your stats.'));
+  return;
+    }
+grid.appendChild(card('nights logged', String(stats.n), stats.n < 4 ? 'more nights sharpen these estimates.' : 'enough nights for a rough read.'));
+ grid.appendChild(card('avg. sleep duration', stats.avgDuration.toFixed(1) + 'h', 'across all logged nights.'));
+  grid.appendChild(card('7-day rolling avg', stats.rollingAvg.toFixed(1) + 'h', 'last ' + Math.min(stats.n,7) + ' nights.'));
+   grid.appendChild(card('consistency score', Math.round(stats.consistencyScore) + ' min', 'circular s.d. of bed/wake times — ' + stats.consistencyLabel + '. lower is steadier.'));
+    if (stats.jetlagAvailable){
+      const cls = stats.socialJetlag >= 1 ? 'flag-jetlag' : 'flag-ok';
+        const sub = stats.socialJetlag >= 1
+ ? 'above the ~1h mark linked to circadian misalignment.'
+   : 'within a typically low-impact range.';
+grid.appendChild(card('social jetlag', stats.socialJetlag.toFixed(1) + 'h', sub, cls));
+  } else {
+grid.appendChild(card('social jetlag', '—', 'needs at least one weekday and one weekend entry.'));
+       }
+  }
+
+    let durationChartInstance = null;
+let screenChartInstance = null;
+
+ function rollingAverageSeries(sorted){
+  return sorted.map(function(_, i){
+   const start = Math.max(0, i-6);
+const window = sorted.slice(start, i+1);
+const avg = window.reduce((a,e)=>a+e.sleepDuration,0)/window.length;
+	        return Math.round(avg*10)/10;
+});
+   }
+
+     function renderDurationChart(sorted){
+  const ctx = document.getElementById('durationChart');
+const labels = sorted.map(e=>e.date.slice(5));
+const durations = sorted.map(e=>Math.round(e.sleepDuration*10)/10);
+  const rolling = rollingAverageSeries(sorted);
+    if (durationChartInstance) durationChartInstance.destroy();
+durationChartInstance = new Chart(ctx, {
+ type:'line',
+data:{
+   labels: labels,
+datasets:[
+{
+label:'nightly sleep (h)',
+ data: durations,
+   borderColor:'#6C7FE8',
+backgroundColor:'rgba(108,127,232,0.12)',
+  borderWidth:2,
+pointRadius:3,
+       pointBackgroundColor:'#6C7FE8',
+  tension:0.25,
+    fill:true
+},
+ {
+  label:'7-day rolling avg (h)',
+   data: rolling,
+    borderColor:'#E8A34C',
+borderDash:[5,4],
+	        borderWidth:2,
+ pointRadius:0,
+   tension:0.25,
+     fill:false
+  }
+]
+       },
+  options:{
+	    responsive:true, maintainAspectRatio:false,
+interaction:{mode:'index', intersect:false},
+ plugins:{
+  legend:{display:false}
+   },
+    scales:{
+      x:{ ticks:{ color:'#9098C4', font:{size:11} }, grid:{ color:'rgba(255,255,255,0.05)'} },
+        y:{ ticks:{ color:'#9098C4', font:{size:11} }, grid:{ color:'rgba(255,255,255,0.07)'}, suggestedMin:0 }
+}
+   }
+     });
+  }
+
+function renderScreenChart(sorted){
+       const ctx = document.getElementById('screenChart');
+  const pairs = [];
+    for (let i=0;i<sorted.length-1;i++){
+pairs.push({ x: sorted[i].screenTime, y: sorted[i+1].energyLevel });
+ }
+  if (screenChartInstance) screenChartInstance.destroy();
+screenChartInstance = new Chart(ctx, {
+type:'scatter',
+      data:{
+datasets:[{
+label:'screen time vs next-day energy',
+   data: pairs,
+	     backgroundColor:'#E8A34C',
+  pointRadius:5
+}]
+},
+options:{
+    responsive:true, maintainAspectRatio:false,
+plugins:{ legend:{display:false} },
+ scales:{
+  x:{ title:{display:true, text:'screen time before bed (min)', color:'#9098C4'}, ticks:{color:'#9098C4', font:{size:11}}, grid:{color:'rgba(255,255,255,0.05)'} },
+   y:{ title:{display:true, text:'next-day energy (1–5)', color:'#9098C4'}, min:0, max:6, ticks:{color:'#9098C4', font:{size:11}, stepSize:1}, grid:{color:'rgba(255,255,255,0.07)'} }
+    }
+      }
+        });
+ const note = document.getElementById('corr-note');
+   if (pairs.length >= 3){
+     const r = pearson(pairs.map(p=>p.x), pairs.map(p=>p.y));
+  if (r !== null){
+const dir = r < -0.1 ? 'a negative' : (r > 0.1 ? 'a positive' : 'little to no');
+       note.textContent = 'Pearson r = ' + r.toFixed(2) + ' — ' + dir + ' association between evening screen time and the next day\'s energy rating in this dataset.';
+  } else {
+note.textContent = 'Not enough variation yet to compute a correlation.';
+}
+ } else {
+  note.textContent = 'Log a few more consecutive nights to see a correlation estimate.';
+}
+	    }
+
+      function renderClock(sorted){
+        const container = document.getElementById('clock-container');
+ container.innerHTML = '';
+   const size = 280;
+     const cx = size/2, cy = size/2;
+  const maxR = size/2 - 14;
+const minR = 34;
+       const n = sorted.length;
+
+  const svgNS = 'http://www.w3.org/2000/svg';
+const svg = document.createElementNS(svgNS,'svg');
+svg.setAttribute('width', size);
+ svg.setAttribute('height', size);
+  svg.setAttribute('viewBox', '0 0 ' + size + ' ' + size);
+   svg.setAttribute('role','img');
+    svg.setAttribute('aria-label','Radial chart of bedtime to wake time spans, one ring per logged night');
+
+      function angleToXY(angleDeg, r){
+        const rad = (angleDeg - 90) * Math.PI/180;
+return { x: cx + r*Math.cos(rad), y: cy + r*Math.sin(rad) };
+   }
+
+     [0,6,12,18].forEach(function(h){
+  const angle = (h/24)*360;
+const p1 = angleToXY(angle, minR-8);
+       const p2 = angleToXY(angle, maxR+8);
+const line = document.createElementNS(svgNS,'line');
+    line.setAttribute('x1',p1.x); line.setAttribute('y1',p1.y);
+line.setAttribute('x2',p2.x); line.setAttribute('y2',p2.y);
+ line.setAttribute('stroke','rgba(255,255,255,0.08)');
+  line.setAttribute('stroke-width','1');
+   svg.appendChild(line);
+    const labelPos = angleToXY(angle, maxR+18);
+      const text = document.createElementNS(svgNS,'text');
+        text.setAttribute('x', labelPos.x);
+ text.setAttribute('y', labelPos.y);
+   text.setAttribute('fill','#6870A0');
+text.setAttribute('font-size','10');
+  text.setAttribute('font-family','monospace');
+text.setAttribute('text-anchor','middle');
+       text.setAttribute('dominant-baseline','middle');
+  text.textContent = (h===0?'00:00':h+':00');
+    svg.appendChild(text);
+});
+
+ if (n === 0){
+  const t = document.createElementNS(svgNS,'text');
+   t.setAttribute('x', cx); t.setAttribute('y', cy);
+    t.setAttribute('fill','#6870A0'); t.setAttribute('font-size','12');
+      t.setAttribute('text-anchor','middle'); t.setAttribute('font-family','monospace');
+        t.textContent = 'no data yet';
+ svg.appendChild(t);
+container.appendChild(svg);
+     return;
+  }
+
+sorted.forEach(function(e, i){
+       const r = n === 1 ? (minR+maxR)/2 : minR + (maxR-minR) * (i/(n-1));
+const bedAngle = (timeToMinutes(e.bedtime)/1440)*360;
+    const sweep = e.sleepDuration/24*360;
+const startXY = angleToXY(bedAngle, r);
+ const endXY = angleToXY(bedAngle+sweep, r);
+  const largeArc = sweep > 180 ? 1 : 0;
+   const path = document.createElementNS(svgNS,'path');
+    const d = 'M ' + startXY.x.toFixed(2) + ' ' + startXY.y.toFixed(2) +
+      ' A ' + r.toFixed(2) + ' ' + r.toFixed(2) + ' 0 ' + largeArc + ' 1 ' +
+endXY.x.toFixed(2) + ' ' + endXY.y.toFixed(2);
+path.setAttribute('d', d);
+   path.setAttribute('fill','none');
+     const t = n === 1 ? 1 : i/(n-1);
+  const rr = Math.round(108 + (232-108)*t);
+const gg = Math.round(127 + (163-127)*t);
+       const bb = Math.round(232 + (76-232)*t);
+  path.setAttribute('stroke', 'rgb(' + rr + ',' + gg + ',' + bb + ')');
+	    path.setAttribute('stroke-width', '4');
+path.setAttribute('stroke-linecap','round');
+ const title = document.createElementNS(svgNS,'title');
+  title.textContent = e.date + ': ' + e.bedtime + ' → ' + e.wakeTime;
+   path.appendChild(title);
+svg.appendChild(path);
+      });
+
+        container.appendChild(svg);
+}
+
+   function renderReport(stats, sorted){
+     const el = document.getElementById('report');
+  if (stats.n === 0){
+el.innerHTML = '<h3>Not enough data yet</h3><p style="color:var(--text-muted)">Log a few nights above to generate a findings summary.</p>';
+       return;
+  }
+const firstDate = sorted[0].date, lastDate = sorted[sorted.length-1].date;
+let p1 = 'Across ' + stats.n + ' logged night' + (stats.n===1?'':'s') + ' (' + firstDate + ' to ' + lastDate + '), average total sleep was <strong>' + stats.avgDuration.toFixed(1) + 'h</strong>, with a 7-day rolling average of <strong>' + stats.rollingAvg.toFixed(1) + 'h</strong>.';
+
+ let p2 = 'Sleep-timing consistency — the spread of bed and wake times around their typical clock position — came out to <strong>' + Math.round(stats.consistencyScore) + ' minutes</strong>, rated <strong>' + stats.consistencyLabel + '</strong>. ';
+  if (stats.consistencyLabel === 'excellent' || stats.consistencyLabel === 'good') {
+   p2 += 'That is a tight window, consistent with a well-anchored circadian phase.';
+    } else {
+p2 += 'That spread is wide enough that the underlying body clock is likely getting mixed timing signals from night to night.';
+}
+
+ let p3;
+   if (stats.jetlagAvailable){
+     p3 = 'Weekday and weekend schedules differed by <strong>' + stats.socialJetlag.toFixed(1) + 'h</strong> at the midpoint of sleep. ';
+  p3 += stats.socialJetlag >= 1
+? 'This crosses the roughly one-hour threshold researchers typically associate with meaningful social jetlag — a self-imposed schedule shift comparable in effect to crossing a time zone each weekend.'
+       : 'This is a modest gap, unlikely on its own to produce noticeable circadian misalignment.';
+  } else {
+    p3 = 'Social jetlag could not be estimated — log at least one weekday and one weekend night to compare them.';
+}
+
+ let p4 = '';
+const pairs = [];
+   for (let i=0;i<sorted.length-1;i++) pairs.push({x:sorted[i].screenTime, y:sorted[i+1].energyLevel});
+    if (pairs.length >= 3){
+const r = pearson(pairs.map(p=>p.x), pairs.map(p=>p.y));
+        if (r !== null){
+ const strength = Math.abs(r) > 0.5 ? 'a fairly clear' : (Math.abs(r) > 0.2 ? 'a mild' : 'little');
+   const dir = r < 0 ? 'lower' : 'higher';
+     p4 = 'Evening screen time showed ' + strength + ' relationship with next-day energy (r = ' + r.toFixed(2) + '): nights with more screen time before bed tended to be followed by ' + (Math.abs(r) > 0.2 ? dir + ' reported energy the next day.' : 'no strong pattern either way in energy the next day.');
+  }
+} else {
+       p4 = 'A few more consecutive nights are needed before the screen-time / energy relationship is worth reading into.';
+  }
+
+    el.innerHTML =
+'<h3>Findings</h3>' +
+ '<p>' + p1 + '</p>' +
+  '<p>' + p2 + '</p>' +
+   '<p>' + p3 + '</p>' +
+    '<p>' + p4 + '</p>' +
+      '<div class="stamp">generated from session log · ' + stats.n + ' nights · not a substitute for clinical sleep assessment</div>';
+        }
+
+ function renderAll(){
+   const sorted = sortedEntries();
+     renderTable();
+  const stats = computeAll();
+renderStats(stats);
+renderDurationChart(sorted);
+  renderScreenChart(sorted);
+    renderClock(sorted);
+renderReport(stats, sorted);
+ }
+
+  document.getElementById('in-energy').addEventListener('input', function(e){
+   document.getElementById('energy-out').textContent = e.target.value;
+    });
+
+      document.getElementById('add-btn').addEventListener('click', function(){
+        const dateEl = document.getElementById('in-date');
+ const bedEl = document.getElementById('in-bed');
+   const wakeEl = document.getElementById('in-wake');
+     const screenEl = document.getElementById('in-screen');
+  const energyEl = document.getElementById('in-energy');
+const msg = document.getElementById('form-msg');
+
+	       if (!dateEl.value || !bedEl.value || !wakeEl.value){
+  msg.textContent = 'Date, bedtime, and wake time are required.';
+    return;
+}
+ if (entries.some(e => e.date === dateEl.value)){
+  msg.textContent = 'That date is already logged — remove it first to replace.';
+   return;
+    }
+      msg.textContent = '';
+        entries.push(makeEntry(dateEl.value, bedEl.value, wakeEl.value, screenEl.value || 0, energyEl.value));
+ markDirty();
+   renderAll();
+	     dateEl.value = '';
+  });
+
+document.getElementById('download-btn').addEventListener('click', downloadData);
+
+       document.getElementById('upload-input').addEventListener('change', function(e){
+  const file = e.target.files && e.target.files[0];
+    if (file) importData(file);
+e.target.value = '';
+ });
+
+const exitModal = document.getElementById('exit-modal');
+
+   document.getElementById('close-btn').addEventListener('click', function(){
+    if (dataSaved){
+      attemptClose();
+} else {
+ exitModal.style.display = 'flex';
+   }
+     });
+
+document.getElementById('modal-no').addEventListener('click', function(){
+downloadData();
+	       exitModal.style.display = 'none';
+  });
+
+    document.getElementById('modal-yes').addEventListener('click', function(){
+exitModal.style.display = 'none';
+attemptClose();
+  });
+
+   function attemptClose(){
+    window.close();
+      setTimeout(function(){
+        if (!document.hidden){
+alert('This tab can\'t be closed automatically by the page — go ahead and close it manually (Ctrl/Cmd+W).');
+   }
+}, 250);
+  }
+
+window.addEventListener('beforeunload', function(e){
+if (!dataSaved){
+  e.preventDefault();
+    e.returnValue = '';
+return '';
+}
+  });
+
+(function setDefaultDate(){
+      const d = new Date();
+        document.getElementById('in-date').value = d.toISOString().slice(0,10);
+ })();
+   markDirty();
+     renderAll();
+
+  })();
+</script>
+</body>
+  </html>
